@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Basic Calculator</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #282c34;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+  }
+  .calculator {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 0 20px #0f0;
+  }
+  .display {
+    background: #000;
+    color: #0f0;
+    font-size: 2.5rem;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: right;
+    height: 60px;
+    overflow-x: auto;
+    user-select: none;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  button {
+    font-size: 1.4rem;
+    padding: 20px 0;
+    border: none;
+    border-radius: 8px;
+    background: #333;
+    color: #0f0;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    user-select: none;
+  }
+  button:hover {
+    background: #0f0;
+    color: #000;
+  }
+  button.operator {
+    background: #0f0;
+    color: #000;
+  }
+  button.operator:hover {
+    background: #0a0;
+  }
+  button.span-two {
+    grid-column: span 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div id="display" class="display">0</div>
+  <div class="buttons">
+    <button id="clear">C</button>
+    <button id="delete">DEL</button>
+    <button class="operator" data-operator="/">÷</button>
+    <button class="operator" data-operator="*">×</button>
+
+    <button data-number="7">7</button>
+    <button data-number="8">8</button>
+    <button data-number="9">9</button>
+    <button class="operator" data-operator="-">−</button>
+
+    <button data-number="4">4</button>
+    <button data-number="5">5</button>
+    <button data-number="6">6</button>
+    <button class="operator" data-operator="+">+</button>
+
+    <button data-number="1">1</button>
+    <button data-number="2">2</button>
+    <button data-number="3">3</button>
+    <button id="equals" class="operator">=</button>
+
+    <button data-number="0" class="span-two">0</button>
+    <button data-number=".">.</button>
+  </div>
+</div>
+
+<script>
+  const display = document.getElementById('display');
+  const buttons = document.querySelectorAll('button');
+  
+  let currentInput = '';
+  let operatorSet = false;
+  
+  function updateDisplay() {
+    display.textContent = currentInput || '0';
+  }
+  
+  function isOperator(char) {
+    return ['+', '-', '*', '/'].includes(char);
+  }
+  
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      const number = button.getAttribute('data-number');
+      const operator = button.getAttribute('data-operator');
+      const id = button.id;
+
+      if (id === 'clear') {
+        currentInput = '';
+        updateDisplay();
+        operatorSet = false;
+        return;
+      }
+      
+      if (id === 'delete') {
+        currentInput = currentInput.slice(0, -1);
+        updateDisplay();
+        return;
+      }
+      
+      if (number !== null) {
+        // Prevent multiple dots in one number segment
+        if (number === '.') {
+          // Find last operator index to check current number
+          const lastOperatorIndex = Math.max(
+            currentInput.lastIndexOf('+'),
+            currentInput.lastIndexOf('-'),
+            currentInput.lastIndexOf('*'),
+            currentInput.lastIndexOf('/')
+          );
+          const lastNumberSegment = currentInput.slice(lastOperatorIndex + 1);
+          if (lastNumberSegment.includes('.')) {
+            return; // ignore additional dots
+          }
+          if (lastNumberSegment.length === 0) {
+            currentInput += '0'; // add leading zero for dot
+          }
+        }
+        currentInput += number;
+        updateDisplay();
+        operatorSet = false;
+        return;
+      }
+      
+      if (operator !== null) {
+        // Prevent two operators in a row
+        if (currentInput === '') {
+          if (operator === '-') {
+            // Allow negative sign at start
+            currentInput = '-';
+            updateDisplay();
+          }
+          return;
+        }
+        if (operatorSet) {
+          // Replace the last operator with new one
+          currentInput = currentInput.slice(0, -1) + operator;
+          updateDisplay();
+          return;
+        }
+        currentInput += operator;
+        updateDisplay();
+        operatorSet = true;
+        return;
+      }
+      
+      if (id === 'equals') {
+        try {
+          // Evaluate expression safely
+          // Disallow ending with operator
+          if (isOperator(currentInput.slice(-1))) {
+            currentInput = currentInput.slice(0, -1);
+          }
+          // eslint-disable-next-line no-eval
+          let result = eval(currentInput);
+          // Handle float precision issues, round to 8 decimals max
+          if (typeof result === 'number' && !Number.isInteger(result)) {
+            result = parseFloat(result.toFixed(8));
+          }
+          currentInput = result.toString();
+          updateDisplay();
+          operatorSet = false;
+        } catch {
+          currentInput = 'Error';
+          updateDisplay();
+          currentInput = '';
+          operatorSet = false;
+        }
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
